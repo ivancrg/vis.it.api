@@ -307,6 +307,29 @@ app.post("/insertTrip", (req, res) => {
   );
 });
 
+app.get("/getUsersTrips", (req, res) => {
+  const username = req.query.username;
+  const sqlSelect = "SELECT * FROM trips WHERE creator = ?";
+
+  db.query(sqlSelect, [username], (err, result) => {
+    if (err) {
+      // Database error
+      res.send({ feedback: "database_error" });
+      console.log("Error: " + err);
+
+      return;
+    }
+    if (result[0]) {
+      // {...obj1, ...obj2} combines two JSON objects into one
+      res.send({ ...{ trips: result }, ...{ feedback: "trips_found" } });
+    } else {
+      res.send({ ...{ trips: result }, ...{ feedback: "trips_not_found" } });
+    }
+
+    return;
+  });
+});
+
 app.listen(process.env.PORT || PORT, () => {
   console.log(`Running on port ${PORT}`);
 });
