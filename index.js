@@ -330,6 +330,96 @@ app.get("/getUsersTrips", (req, res) => {
   });
 });
 
+app.get("/readOnTrip", (req, res) => {
+  const username = req.query.username;
+  const sqlSelect = "SELECT currently_on_trip FROM users WHERE username = ?";
+
+  db.query(sqlSelect, [username], (err, resultCurrentlyOnTrip) => {
+    if (err) {
+      // Database error
+      res.send({ feedback: "database_error" });
+      console.log("Error: " + err);
+
+      return;
+    }
+
+    if (
+      resultCurrentlyOnTrip[0] &&
+      resultCurrentlyOnTrip[0].currently_on_trip !== null &&
+      resultCurrentlyOnTrip[0].currently_on_trip !== "null"
+    ) {
+      const current_trip_id = resultCurrentlyOnTrip[0].currently_on_trip;
+      const sqlSelectTripData = "SELECT * FROM trips WHERE id = ?";
+
+      // Getting current trip data
+      db.query(sqlSelectTripData, [current_trip_id], (err, resultTripData) => {
+        if (err) {
+          // Database error
+          res.send({ feedback: "database_error" });
+          console.log("Error: " + err);
+
+          return;
+        }
+
+        // Sending currently_on_trip, trip data and feedback
+        res.send({
+          ...resultCurrentlyOnTrip[0],
+          ...{ trip_data: resultTripData[0] },
+          ...{ feedback: "currently_on_trip" },
+        });
+      });
+    } else {
+      res.send({ feedback: "currently_not_on_trip" });
+    }
+
+    return;
+  });
+});
+
+app.patch("/addOnTrip/:username", (req, res) => {
+  const username = req.params.username;
+  const trip_id = req.body.trip_id;
+
+  const sqlSelect = "SELECT * FROM users WHERE username = ?";
+
+  db.query(sqlSelect, [username], (err, result) => {
+    if (err) {
+      // Database error
+
+      res.send({ feedback: "database_error" });
+      return;
+    } else if (result[0]) {
+      // User found
+
+      const sqlUpdate =
+        "UPDATE users SET currently_on_trip = ? WHERE username = ?";
+
+      db.query(sqlUpdate, [trip_id, username], (err, result) => {
+        if (err) {
+          // Database error while updating trip
+
+          res.send({ feedback: "database_error" });
+
+          return;
+        } else {
+          // No error in sqlInsert query, trip updated
+
+          res.send({ feedback: "current_trip_updated" });
+
+          return;
+        }
+      });
+
+      return;
+    } else {
+      // User not found, no error in sqlSelect query
+
+      res.send({ feedback: "user_not_found" });
+      return;
+    }
+  });
+});
+
 app.listen(process.env.PORT || PORT, () => {
   console.log(`Running on port ${PORT}`);
 });
