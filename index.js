@@ -426,6 +426,93 @@ app.get("/connectionTest", (req, res) => {
   res.send({ feedback: "***TEST STRING '" + testString + "' RECEIVED***" });
 });
 
+app.post("/insertTripResponseID", (req, res) => {
+  const country = req.body.country;
+  const city = req.body.city;
+  const location = req.body.location;
+  const travelling_mode = req.body.travelling_mode;
+  const date_of_departure = req.body.date_of_departure;
+  const necessities = req.body.necessities;
+  const participants_description = req.body.participants_description;
+  const creator = req.body.creator;
+
+  const sqlInsert =
+    "INSERT INTO trips (country, city, location, travelling_mode, date_of_departure, necessities, participants_description, creator) VALUES (?, ?, ?, ?, ?, ?, ?, ?); SELECT LAST_INSERT_ID();";
+
+  db.query(
+    sqlInsert,
+    [
+      country,
+      city,
+      location,
+      travelling_mode,
+      date_of_departure,
+      necessities,
+      participants_description,
+      creator,
+    ],
+    (err, result) => {
+      if (err) {
+        // Database error while inserting trip data
+        res.send({ feedback: "database_error" });
+        console.log(err);
+
+        return;
+      } else {
+        // No error in sqlInsert query, trip inserted successfully
+        res.send({
+          ...{ id: result[0].insertId },
+          ...{ feedback: "trip_inserted" },
+        });
+
+        return;
+      }
+    }
+  );
+});
+
+app.get("/getTripById", (req, res) => {
+  const id = req.query.id;
+  const sqlSelect = "SELECT * FROM trips WHERE id = ?";
+
+  db.query(sqlSelect, [id], (err, result) => {
+    if (err) {
+      // Database error
+      res.send({ feedback: "database_error" });
+      console.log("Error: " + err);
+
+      return;
+    }
+    if (result[0]) {
+      // {...obj1, ...obj2} combines two JSON objects into one
+      res.send({ ...result[0], ...{ feedback: "trip_found" } });
+    } else {
+      res.send({ ...result[0], ...{ feedback: "trip_not_found" } });
+    }
+
+    return;
+  });
+});
+
+app.delete("/deleteTripById", (req, res) => {
+  const id = req.query.id;
+  const sqlDelete = "DELETE FROM trips WHERE id = ?";
+
+  db.query(sqlDelete, [id], (err, result) => {
+    if (err) {
+      // Database error
+      res.send({ feedback: "database_error" });
+      console.log("Error: " + err);
+
+      return;
+    }
+
+    res.send({ feedback: "trip_deleted" });
+
+    return;
+  });
+});
+
 app.listen(process.env.PORT || PORT, () => {
   console.log(`Running on port ${PORT}`);
 });
