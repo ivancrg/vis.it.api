@@ -420,6 +420,12 @@ app.patch("/addOnTrip/:username", (req, res) => {
   });
 });
 
+app.get("/connectionTest", (req, res) => {
+  const testString = req.query.testString;
+
+  res.send({ feedback: "***TEST STRING '" + testString + "' RECEIVED***" });
+});
+
 app.listen(process.env.PORT || PORT, () => {
   console.log(`Running on port ${PORT}`);
 });
